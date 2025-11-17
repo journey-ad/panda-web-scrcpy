@@ -1,9 +1,10 @@
-<script setup>
+<script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { AndroidKeyCode, AndroidKeyEventAction, AndroidScreenPowerMode } from '@yume-chan/scrcpy';
 import state from '../Scrcpy/scrcpy-state';
 import client from '../Scrcpy/adb-client';
 import recorder from '../Scrcpy/recorder';
+import { saveAs } from 'file-saver';
 
 const props = defineProps({
     direction: {
@@ -49,10 +50,10 @@ onUnmounted(() => {
 });
 
 const buttons = ref([
-    { icon: 'mdi-camera', label: 'Camera', onClick: () => takeScreenshot() },
+    { icon: 'mdi-camera', label: '截图', onClick: () => takeScreenshot() },
     {
         icon: 'mdi-radiobox-marked',
-        label: computed(() => (isRecording.value ? `Recording ${recordingTime.value}` : '录制')),
+        label: computed(() => (isRecording.value ? `录制中 ${recordingTime.value}` : '录制')),
         onClick: () => recording(),
         isActive: computed(() => isRecording.value),
     },
@@ -82,19 +83,45 @@ const buttons = ref([
 ]);
 
 async function takeScreenshot() {
-    const canvas = state.getCanvas();
-    if (!canvas) return;
+    if(!client.device) return;
 
     try {
         const timestamp = formatDateTime(new Date());
         const deviceName = client.deviceName?.replace(/[^a-zA-Z0-9-_]/g, '_') || 'device';
         const fileName = `screenshot_${deviceName}_${timestamp}.png`;
 
-        const anchor = document.createElement('a');
-        anchor.href = canvas.toDataURL('image/png');
-        anchor.download = fileName;
-        anchor.click();
-        anchor.remove();
+        // 执行screencap命令并保存到/tmp/screenshot.png
+        await client.device.subprocess.noneProtocol!.spawnWait([
+            'screencap',
+            '-p',
+            '/tmp/screenshot.png'
+        ]);
+
+        // 从/tmp/screenshot.png读取并保存为文件
+        const tempFile = `/tmp/screenshot.png`;
+        const sync = await client.device.sync();
+        try {
+            const stream = await sync.read(tempFile);
+            
+            const reader = stream.getReader();
+            const chunks: Uint8Array[] = [];
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                chunks.push(value);
+            }
+            
+            const blob = new Blob(chunks as BlobPart[], { type: 'image/png' });
+            saveAs(blob, fileName);
+        } finally {
+            await sync.dispose();
+            await client.device.subprocess.noneProtocol!.spawnWait([
+                'rm',
+                tempFile
+            ]);
+        }
     } catch (error) {
         console.error('截图保存失败:', error);
     }
@@ -110,7 +137,8 @@ function recording() {
                 console.error('Cannot start recording: video metadata is not set');
                 return;
             }
-            recorder.startRecording();
+            recorder.startRecording(); // 开始录制
+            state.scrcpy.controller.resetVideo(); // 重置视频流以开始录制
         }
     } catch (error) {
         console.error('录制操作失败:', error);

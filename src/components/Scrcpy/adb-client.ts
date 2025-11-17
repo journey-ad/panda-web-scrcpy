@@ -63,6 +63,8 @@ export class AdbClient {
                 credentialStore: this.credentialStore,
             })
         );
+        this.serial = await this.device.getProp('ro.serialno');
+        this.name = await this.device.getProp('ro.product.model');
 
         return this.device;
     }
@@ -73,6 +75,8 @@ export class AdbClient {
         }
         await this.device.close();
         this.device = undefined;
+        this.serial = undefined;
+        this.name = undefined;
     }
 
     async addUsbDevice() {
