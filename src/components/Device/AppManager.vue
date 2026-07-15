@@ -74,7 +74,7 @@
                         color="primary"
                         variant="tonal"
                         size="small"
-                        prepend-icon="mdi-play"
+                        :prepend-icon="mdiPlay"
                         @click="launchApp(item)"
                       >
                         启动
@@ -83,7 +83,7 @@
                         color="info"
                         variant="tonal"
                         size="small"
-                        prepend-icon="mdi-export"
+                        :prepend-icon="mdiExport"
                         @click="exportApk(item)"
                         :loading="item.exporting"
                       >
@@ -93,7 +93,7 @@
                         color="error"
                         variant="tonal"
                         size="small"
-                        prepend-icon="mdi-delete"
+                        :prepend-icon="mdiDelete"
                         @click="uninstallApp(item)"
                         :loading="item.uninstalling"
                       >
@@ -170,6 +170,8 @@
 </template>
 
 <script setup lang="ts">
+import { mdiDelete, mdiExport, mdiPlay } from '@mdi/js'
+
 import { ref, onMounted, watch } from 'vue';
 import DeviceInstall from './DeviceInstall.vue';
 import { PackageManager } from "@yume-chan/android-bin";

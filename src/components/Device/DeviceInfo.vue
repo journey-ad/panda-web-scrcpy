@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { mdiApps, mdiBug, mdiCellphoneScreenshot, mdiCog, mdiInformation, mdiRefresh, mdiWeb, mdiWifi } from '@mdi/js'
+
 import { ref, computed, onMounted } from 'vue';
 import DeviceBasicInfo from './DeviceBasicInfo.vue';
 import BatteryInfo from './BatteryInfo.vue';
@@ -250,7 +252,7 @@ onMounted(async () => {
                 <DeviceBasicInfo :deviceInfo="deviceInfo" />
                 <v-btn
                     class="refresh-btn"
-                    icon="mdi-refresh"
+                    :icon="mdiRefresh"
                     variant="text"
                     size="small"
                     :loading="isLoading"
@@ -271,15 +273,15 @@ onMounted(async () => {
             </div>
             <div class="device-controls">
                 <v-btn-group variant="outlined" class="control-group">
-                    <v-btn size="small" prepend-icon="mdi-cog" @click="openSettings" title="打开系统设置">设置</v-btn>
-                    <v-btn size="small" prepend-icon="mdi-bug" @click="openDeveloperOptions" title="打开开发者选项">开发者</v-btn>
-                    <v-btn size="small" prepend-icon="mdi-web" @click="openBrowser" title="打开浏览器">浏览器</v-btn>
-                    <v-btn size="small" prepend-icon="mdi-wifi" @click="openWifiSettings" title="打开WiFi设置">WiFi</v-btn>
+                    <v-btn size="small" :prepend-icon="mdiCog" @click="openSettings" title="打开系统设置">设置</v-btn>
+                    <v-btn size="small" :prepend-icon="mdiBug" @click="openDeveloperOptions" title="打开开发者选项">开发者</v-btn>
+                    <v-btn size="small" :prepend-icon="mdiWeb" @click="openBrowser" title="打开浏览器">浏览器</v-btn>
+                    <v-btn size="small" :prepend-icon="mdiWifi" @click="openWifiSettings" title="打开WiFi设置">WiFi</v-btn>
                 </v-btn-group>
                 <v-btn-group variant="outlined" class="control-group">
-                    <v-btn size="small" prepend-icon="mdi-cellphone-screenshot" @click="openDisplaySettings" title="打开显示设置">显示</v-btn>
-                    <v-btn size="small" prepend-icon="mdi-apps" @click="openAppSettings" title="打开应用设置">应用</v-btn>
-                    <v-btn size="small" prepend-icon="mdi-information" @click="openAboutPhone" title="关于手机">关于</v-btn>
+                    <v-btn size="small" :prepend-icon="mdiCellphoneScreenshot" @click="openDisplaySettings" title="打开显示设置">显示</v-btn>
+                    <v-btn size="small" :prepend-icon="mdiApps" @click="openAppSettings" title="打开应用设置">应用</v-btn>
+                    <v-btn size="small" :prepend-icon="mdiInformation" @click="openAboutPhone" title="关于手机">关于</v-btn>
                 </v-btn-group>
             </div>
         </div>

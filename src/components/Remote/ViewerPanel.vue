@@ -3,7 +3,7 @@
     <div v-if="!isConnected" class="connection-form">
       <div class="connect-card">
         <div class="cc-header">
-          <v-icon size="20" color="secondary" class="mr-2">mdi-cast-connected</v-icon>
+          <v-icon size="20" color="secondary" class="mr-2" :icon="mdiCastConnected" />
           <span class="cc-title">远程观看</span>
         </div>
         <div class="cc-body">
@@ -26,7 +26,7 @@
             :disabled="!hostPeerId.trim()"
             @click="handleConnect"
           >
-            <v-icon start size="16">mdi-connection</v-icon>
+            <v-icon start size="16" :icon="mdiConnection" />
             连接
           </v-btn>
         </div>
@@ -47,7 +47,7 @@
           class="text-none"
           @click="handleDisconnect"
         >
-          <v-icon start size="14">mdi-close</v-icon>
+          <v-icon start size="14" :icon="mdiClose" />
           断开
         </v-btn>
       </div>
@@ -68,13 +68,13 @@
 
       <div class="nav-bar">
         <button class="nav-btn" @click="touchController.sendBackKey">
-          <v-icon size="20">mdi-arrow-left</v-icon>
+          <v-icon size="20" :icon="mdiArrowLeft" />
         </button>
         <button class="nav-btn" @click="touchController.sendHomeKey">
-          <v-icon size="20">mdi-circle-outline</v-icon>
+          <v-icon size="20" :icon="mdiCircleOutline" />
         </button>
         <button class="nav-btn" @click="touchController.sendRecentsKey">
-          <v-icon size="20">mdi-square-outline</v-icon>
+          <v-icon size="20" :icon="mdiSquareOutline" />
         </button>
       </div>
     </div>
@@ -93,6 +93,8 @@
 </template>
 
 <script setup lang="ts">
+import { mdiArrowLeft, mdiCastConnected, mdiCircleOutline, mdiClose, mdiConnection, mdiSquareOutline } from '@mdi/js'
+
 import { ref, watch, onMounted } from 'vue';
 import { useScreenViewer } from '@/composables/use-screen-viewer';
 import { useTouchController } from '@/composables/use-touch-controller';

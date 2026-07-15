@@ -1,4 +1,6 @@
 <script setup>
+import { mdiCellphone, mdiClose } from '@mdi/js'
+
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -27,7 +29,7 @@ const drawer = computed({
       <div class="drawer-header">
         <span class="drawer-title">选择调试设备</span>
         <button class="drawer-close" @click="drawer = false">
-          <v-icon size="18">mdi-close</v-icon>
+          <v-icon size="18" :icon="mdiClose" />
         </button>
       </div>
       <v-alert
@@ -39,7 +41,7 @@ const drawer = computed({
         支持将本地设备快速接入平台，提供设备调试、应用管理、日志查看等功能
       </v-alert>
       <div class="drawer-empty">
-        <v-icon size="32" color="secondary" class="mb-2">mdi-cellphone-android</v-icon>
+        <v-icon size="32" color="secondary" class="mb-2" :icon="mdiCellphone" />
         <p class="text-body-2 text-medium-emphasis">未检测到设备</p>
         <p class="text-caption text-disabled">请确保设备已开启 USB 调试模式并连接到电脑</p>
       </div>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { mdiArrowLeft, mdiBellOutline, mdiCameraOutline, mdiCircleOutline, mdiEyeOffOutline, mdiEyeOutline, mdiFullscreen, mdiFullscreenExit, mdiPowerStandby, mdiRadioboxMarked, mdiScreenRotation, mdiSquareOutline, mdiStopCircle, mdiVolumeMinus, mdiVolumePlus } from '@mdi/js'
+
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { AndroidKeyCode, AndroidKeyEventAction, AndroidScreenPowerMode } from '@yume-chan/scrcpy';
 import state from '../Scrcpy/scrcpy-state';
@@ -244,29 +246,29 @@ type ToolbarButton = {
 };
 
 const buttons = computed((): ToolbarButton[] => [
-    { icon: 'mdi-camera-outline', label: '截图', onClick: takeScreenshot },
+    { icon: mdiCameraOutline, label: '截图', onClick: takeScreenshot },
     {
-        icon: isRecording.value ? 'mdi-stop-circle' : 'mdi-radiobox-marked',
+        icon: isRecording.value ? mdiStopCircle : mdiRadioboxMarked,
         label: isRecording.value ? `录制中 ${recordingTime.value}` : '录制',
         onClick: recording,
         isActive: isRecording.value,
     },
     {
-        icon: isFullscreen.value ? 'mdi-fullscreen-exit' : 'mdi-fullscreen',
+        icon: isFullscreen.value ? mdiFullscreenExit : mdiFullscreen,
         label: '全屏',
         onClick: toggleFullScreen,
     },
     {
-        icon: isScreenOn.value ? 'mdi-eye-outline' : 'mdi-eye-off-outline',
+        icon: isScreenOn.value ? mdiEyeOutline : mdiEyeOffOutline,
         label: '隐私模式',
         onClick: toggleScreen,
     },
-    { icon: 'mdi-screen-rotation', label: '旋转', size: '16', onClick: rotateDevice },
-    { icon: 'mdi-bell-outline', label: '通知栏', onClick: notificationPanel },
-    { icon: 'mdi-volume-plus', label: '音量 + ', onClick: volumeUp },
-    { icon: 'mdi-volume-minus', label: '音量 -', onClick: volumeDown },
+    { icon: mdiScreenRotation, label: '旋转', size: '16', onClick: rotateDevice },
+    { icon: mdiBellOutline, label: '通知栏', onClick: notificationPanel },
+    { icon: mdiVolumePlus, label: '音量 + ', onClick: volumeUp },
+    { icon: mdiVolumeMinus, label: '音量 -', onClick: volumeDown },
     {
-        icon: 'mdi-power-standby',
+        icon: mdiPowerStandby,
         label: '电源',
         onClick: () => client.device?.power?.powerButton(),
     },
@@ -302,7 +304,7 @@ const buttons = computed((): ToolbarButton[] => [
                     @mousedown="handleBackPointerDown"
                     @mouseup="handleBackPointerUp"
                 >
-                    <v-icon size="18">mdi-arrow-left</v-icon>
+                    <v-icon size="18" :icon="mdiArrowLeft" />
                 </button>
 
                 <button
@@ -311,7 +313,7 @@ const buttons = computed((): ToolbarButton[] => [
                     @mousedown="handleHomePointerDown"
                     @mouseup="handleHomePointerUp"
                 >
-                    <v-icon size="18">mdi-circle-outline</v-icon>
+                    <v-icon size="18" :icon="mdiCircleOutline" />
                 </button>
 
                 <button
@@ -320,7 +322,7 @@ const buttons = computed((): ToolbarButton[] => [
                     @mousedown="handleAppSwitchPointerDown"
                     @mouseup="handleAppSwitchPointerUp"
                 >
-                    <v-icon size="18">mdi-square-outline</v-icon>
+                    <v-icon size="18" :icon="mdiSquareOutline" />
                 </button>
             </div>
         </div>

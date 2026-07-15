@@ -8,7 +8,7 @@
       class="app-toolbar"
     >
       <v-btn icon variant="text" size="small" @click="goBackToDevice">
-        <v-icon size="20">mdi-arrow-left</v-icon>
+        <v-icon size="20" :icon="mdiArrowLeft" />
       </v-btn>
       <v-app-bar-title class="text-body-2 font-weight-medium text-secondary">
         远程观看
@@ -23,7 +23,7 @@
           class="ml-1 text-none text-secondary"
           @click="isDeviceMode = false"
         >
-          <v-icon start size="16">mdi-cast-connected</v-icon>
+          <v-icon start size="16" :icon="mdiCastConnected" />
           远程观看
         </v-btn>
       </template>
@@ -34,10 +34,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { mdiArrowLeft, mdiCastConnected } from '@mdi/js'
+
+import { ref, onMounted, defineAsyncComponent } from 'vue';
 import { VApp, VIcon, VBtn, VAppBar, VAppBarTitle } from 'vuetify/components';
-import DeviceView from './views/DeviceView.vue';
-import RemoteView from './views/RemoteView.vue';
+const DeviceView = defineAsyncComponent(() => import('./views/DeviceView.vue'));
+const RemoteView = defineAsyncComponent(() => import('./views/RemoteView.vue'));
 
 const roomName = ref('default-room');
 const currentUser = ref({

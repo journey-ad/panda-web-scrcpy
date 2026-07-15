@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { mdiCellphone, mdiCellphoneLink, mdiCheckCircle, mdiChevronDown, mdiClose, mdiPlus } from '@mdi/js'
+
 import { ref, onMounted, shallowRef, watch, computed, onUnmounted } from 'vue';
 import client from '../Scrcpy/adb-client';
 import { AdbDaemonWebUsbDeviceWatcher, AdbDaemonWebUsbDevice } from '@yume-chan/adb-daemon-webusb';
@@ -235,7 +237,7 @@ defineExpose({ handleAddDevice, openMenu });
         >
             <template #activator="{ props }">
                 <button class="device-trigger" v-bind="props">
-                    <v-icon size="16" class="trigger-icon">mdi-cellphone-link</v-icon>
+                    <v-icon size="16" class="trigger-icon" :icon="mdiCellphoneLink" />
                     <span class="trigger-label">
                         {{ selected ? (selected.name || selected.serial) : '选择设备' }}
                     </span>
@@ -243,7 +245,7 @@ defineExpose({ handleAddDevice, openMenu });
                         class="trigger-dot"
                         :class="connectionStatus === 'connected' ? 'trigger-dot--on' : 'trigger-dot--off'"
                     />
-                    <v-icon size="14" class="trigger-chevron">mdi-chevron-down</v-icon>
+                    <v-icon size="14" class="trigger-chevron" :icon="mdiChevronDown" />
                 </button>
             </template>
             <div class="device-dropdown">
@@ -251,7 +253,7 @@ defineExpose({ handleAddDevice, openMenu });
                     <span class="dd-title">设备</span>
                     <div class="dd-actions">
                         <button class="dd-icon-btn" title="配对设备" @click="handleAddDevice">
-                            <v-icon size="18">mdi-plus</v-icon>
+                            <v-icon size="18" :icon="mdiPlus" />
                         </button>
                         <DeviceGuide />
                     </div>
@@ -276,20 +278,20 @@ defineExpose({ handleAddDevice, openMenu });
                 <div v-if="!deviceList.length" class="dd-section dd-empty">
                     <p class="text-body-2 text-medium-emphasis mb-3">暂无已配对设备</p>
                     <v-btn variant="outlined" size="small" block @click="handleAddDevice">
-                        <v-icon start size="16">mdi-cellphone-link</v-icon>
+                        <v-icon start size="16" :icon="mdiCellphoneLink" />
                         添加 USB 设备
                     </v-btn>
                 </div>
 
                 <div v-else class="dd-list">
-                    <button
+                    <div
                         v-for="device in deviceOptions"
                         :key="device.serial"
                         class="dd-item"
                         @click="selectDevice(device)"
                     >
                         <div class="dd-item-icon">
-                            <v-icon size="20" color="secondary">mdi-cellphone</v-icon>
+                            <v-icon size="20" color="secondary" :icon="mdiCellphone" />
                         </div>
                         <div class="dd-item-info">
                             <span class="dd-item-name">{{ device.name || device.serial }}</span>
@@ -300,17 +302,15 @@ defineExpose({ handleAddDevice, openMenu });
                             size="16"
                             color="success"
                             class="mr-1"
-                        >
-                            mdi-check-circle
-                        </v-icon>
+                         :icon="mdiCheckCircle" />
                         <button
                             class="dd-icon-btn"
                             title="移除设备"
                             @click.stop="removeDevice(device.serial)"
                         >
-                            <v-icon size="16">mdi-close</v-icon>
+                            <v-icon size="16" :icon="mdiClose" />
                         </button>
-                    </button>
+                    </div>
                 </div>
 
                 <div class="dd-footer">

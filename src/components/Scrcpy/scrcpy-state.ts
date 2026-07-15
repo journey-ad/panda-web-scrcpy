@@ -28,8 +28,7 @@ import {
 import { ScrcpyKeyboardInjector } from './input';
 import recorder from './recorder';
 
-// @ts-ignore
-import SCRCPY_SERVER_BIN from '../../../public/scrcpy-server-v3.3.3?binary';
+import SCRCPY_SERVER_URL from '@yume-chan/fetch-scrcpy-server/server.bin?url';
 
 // 类型定义
 type RotationListener = (rotation: number, prevRotation: number) => void;
@@ -205,10 +204,12 @@ export class ScrcpyState {
         }
 
         try {
-            console.log('开始推送服务器...', new Uint8Array(SCRCPY_SERVER_BIN).length);
+            const response = await fetch(SCRCPY_SERVER_URL);
+            const serverBin = new Uint8Array(await response.arrayBuffer());
+            console.log('开始推送服务器...', serverBin.length);
             const stream = new ReadableStream<Consumable<Uint8Array>>({
                 start(controller) {
-                    controller.enqueue(new Consumable(new Uint8Array(SCRCPY_SERVER_BIN)));
+                    controller.enqueue(new Consumable(serverBin));
                     controller.close();
                 },
             });

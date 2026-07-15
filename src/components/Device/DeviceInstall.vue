@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { mdiAndroid } from '@mdi/js'
+
 import { ref, reactive, computed } from 'vue';
 import { PackageManager, type PackageManagerInstallOptions } from '@yume-chan/android-bin';
 import { createFileStream, WrapConsumableStream, ProgressStream } from '../Scrcpy/file';
@@ -135,7 +137,7 @@ const formatFileSize = (size: number) => {
                             style="display: none"
                             @change="handleFileUpload"
                         />
-                        <v-icon size="64" color="primary">mdi-android</v-icon>
+                        <v-icon size="64" color="primary" :icon="mdiAndroid" />
                         <p class="text-body-1 mt-4">点击或拖拽 APK 文件到此处</p>
                         <p v-if="file" class="text-caption mt-2">已选择: {{ file.name }}</p>
                     </div>

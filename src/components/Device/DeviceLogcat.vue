@@ -46,10 +46,10 @@
                         variant="text"
                         @click="toggleLogcat"
                     >
-                        <v-icon>{{ isRunning ? 'mdi-stop' : 'mdi-play' }}</v-icon>
+                        <v-icon :icon=" isRunning ? mdiStop : mdiPlay " />
                     </v-btn>
                     <v-btn color="secondary" class="mr-2" variant="text" @click="clearLogs">
-                        <v-icon>mdi-delete</v-icon>
+                        <v-icon :icon="mdiDelete" />
                     </v-btn>
                     <v-btn
                         :disabled="filteredLogs.length === 0"
@@ -57,7 +57,7 @@
                         variant="text"
                         @click="exportLogs"
                     >
-                        <v-icon>mdi-export</v-icon>
+                        <v-icon :icon="mdiExport" />
                     </v-btn>
                 </div>
             </div>
@@ -118,6 +118,8 @@
 </template>
 
 <script setup lang="ts">
+import { mdiDelete, mdiExport, mdiPlay, mdiStop } from '@mdi/js'
+
 // 脚本部分保持不变
 import { ref, shallowRef, computed, nextTick, watch } from 'vue';
 import client from '../Scrcpy/adb-client';

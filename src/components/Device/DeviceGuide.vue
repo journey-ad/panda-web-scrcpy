@@ -1,6 +1,6 @@
 <template>
     <button class="dd-icon-btn" @click="guideDialogVisible = true" title="帮助文档">
-        <v-icon size="18">mdi-help-circle-outline</v-icon>
+        <v-icon size="18" :icon="mdiHelpCircleOutline" />
     </button>
 
     <v-dialog v-model="guideDialogVisible" max-width="560">
@@ -8,7 +8,7 @@
             <div class="gd-header">
                 <span class="gd-title">添加设备指南</span>
                 <button class="gd-close" @click="guideDialogVisible = false">
-                    <v-icon size="18">mdi-close</v-icon>
+                    <v-icon size="18" :icon="mdiClose" />
                 </button>
             </div>
 
@@ -42,6 +42,8 @@
 </template>
 
 <script setup>
+import { mdiClose, mdiHelpCircleOutline } from '@mdi/js'
+
 import { ref, computed } from 'vue';
 
 const guideDialogVisible = ref(false);

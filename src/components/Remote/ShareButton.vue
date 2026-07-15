@@ -9,7 +9,7 @@
       :loading="connectionState === 'initializing'"
       @click="handleStartShare"
     >
-      <v-icon start size="16">mdi-share-variant-outline</v-icon>
+      <v-icon start size="16" :icon="mdiShareVariantOutline" />
       分享
     </v-btn>
 
@@ -20,7 +20,7 @@
         <span v-if="viewerCount > 0" class="share-badge">{{ viewerCount }}</span>
       </button>
       <button class="share-stop" title="停止分享" @click="handleStopShare">
-        <v-icon size="14">mdi-stop</v-icon>
+        <v-icon size="14" :icon="mdiStop" />
       </button>
     </div>
 
@@ -29,7 +29,7 @@
         <div class="sd-header">
           <span class="sd-title">屏幕分享中</span>
           <button class="sd-close" @click="showShareDialog = false">
-            <v-icon size="18">mdi-close</v-icon>
+            <v-icon size="18" :icon="mdiClose" />
           </button>
         </div>
 
@@ -45,7 +45,7 @@
           >
             <template v-slot:append-inner>
               <v-btn icon variant="text" size="x-small" @click="copyShareLink">
-                <v-icon size="16">mdi-content-copy</v-icon>
+                <v-icon size="16" :icon="mdiContentCopy" />
               </v-btn>
             </template>
           </v-text-field>
@@ -59,13 +59,13 @@
           >
             <template v-slot:append-inner>
               <v-btn icon variant="text" size="x-small" @click="copyPeerId">
-                <v-icon size="16">mdi-content-copy</v-icon>
+                <v-icon size="16" :icon="mdiContentCopy" />
               </v-btn>
             </template>
           </v-text-field>
 
           <div class="sd-viewers">
-            <v-icon size="14" color="info" class="mr-1">mdi-account-multiple</v-icon>
+            <v-icon size="14" color="info" class="mr-1" :icon="mdiAccountMultiple" />
             <span>{{ viewerCount }} 位观看者</span>
           </div>
         </div>
@@ -93,6 +93,8 @@
 </template>
 
 <script setup lang="ts">
+import { mdiAccountMultiple, mdiClose, mdiContentCopy, mdiShareVariantOutline, mdiStop } from '@mdi/js'
+
 import { ref, watch, computed } from 'vue';
 import { useScreenShare } from '@/composables/use-screen-share';
 import scrcpyState from '@/components/Scrcpy/scrcpy-state';
