@@ -15,7 +15,7 @@ export default defineConfig({
     Binary() as Plugin,
     analyzer({ analyzerMode: 'static', openAnalyzer: false }),
   ],
-  base: '/PandaScrcpy/', // 须与 GitHub 仓库名一致（GitHub Pages 项目站点路径）
+  base: './',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
