@@ -1,15 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import { createVuetify } from 'vuetify'
-import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 import 'vuetify/styles'
-import '@mdi/font/css/materialdesignicons.css'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
 
 const vuetify = createVuetify({
-  components,
-  directives,
   theme: {
     defaultTheme: 'light',
     themes: {
@@ -46,6 +41,7 @@ const vuetify = createVuetify({
     aliases,
     sets: {
       mdi,
+      svg: mdi,
     },
   },
 })

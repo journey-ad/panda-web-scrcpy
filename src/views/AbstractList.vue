@@ -30,13 +30,15 @@
           <strong>功能加强版</strong>
           <small>AI 助手 · 虚拟屏幕 · 设备群控 · 脚本录制回放 · 性能检测等功能，免费使用</small>
         </span>
-        <v-icon size="16" class="cta-arrow">mdi-arrow-right</v-icon>
+        <v-icon size="16" class="cta-arrow" :icon="mdiArrowRight" />
       </a>
     </div>
   </div>
 </template>
 
 <script setup>
+import { mdiArrowRight } from '@mdi/js'
+
 import logo from '../assets/logo.svg';
 
 const commands = [

@@ -1,17 +1,20 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, shallowRef, watch } from "vue";
+import { mdiArrowTopRight, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiConsole, mdiGithub, mdiInformationOutline, mdiPackageVariantClosed, mdiPower, mdiRocketLaunchOutline, mdiTextBoxSearchOutline } from '@mdi/js'
+
+import { ref, computed, onMounted, onUnmounted, shallowRef, watch, defineAsyncComponent } from "vue";
 import { useDisplay } from "vuetify";
 import PairedDevices from "../components/Device/PairedDevices.vue";
 import logo from "../assets/logo.svg";
-import DeviceShell from "../components/Device/DeviceShell.vue";
-import DeviceLogcat from "../components/Device/DeviceLogcat.vue";
-import DeviceInfo from "../components/Device/DeviceInfo.vue";
 import AbstractList from "./AbstractList.vue";
 import VideoContainer from "../components/Device/VideoContainer.vue";
 import NavigationBar from "../components/Device/NavigationBar.vue";
 import state from "../components/Scrcpy/scrcpy-state";
-import AppManager from "../components/Device/AppManager.vue";
 import ShareButton from '../components/Remote/ShareButton.vue'
+
+const DeviceInfo = defineAsyncComponent(() => import("../components/Device/DeviceInfo.vue"));
+const AppManager = defineAsyncComponent(() => import("../components/Device/AppManager.vue"));
+const DeviceShell = defineAsyncComponent(() => import("../components/Device/DeviceShell.vue"));
+const DeviceLogcat = defineAsyncComponent(() => import("../components/Device/DeviceLogcat.vue"));
 
 const { width } = useDisplay();
 /** 宽屏下是否具备显示右侧栏的条件 */
@@ -191,10 +194,10 @@ watch(width, (newWidth, oldWidth) => {
 });
 
 const tabs = [
-  { title: "基础信息", icon: "mdi-information-outline", component: DeviceInfo },
-  { title: "应用管理", icon: "mdi-package-variant-closed", component: AppManager },
-  { title: "终端", icon: "mdi-console", component: DeviceShell },
-  { title: "Logcat", icon: "mdi-text-box-search-outline", component: DeviceLogcat },
+  { title: "基础信息", icon: mdiInformationOutline, component: DeviceInfo },
+  { title: "应用管理", icon: mdiPackageVariantClosed, component: AppManager },
+  { title: "终端", icon: mdiConsole, component: DeviceShell },
+  { title: "Logcat", icon: mdiTextBoxSearchOutline, component: DeviceLogcat },
 ];
 
 const pairedDevicesRef = ref(null);
@@ -240,9 +243,7 @@ const handleAddDevice = () => {
         :title="rightPanelCollapsed ? '展开侧栏' : '收起侧栏'"
         @click="rightPanelCollapsed = !rightPanelCollapsed"
       >
-        <v-icon size="20">
-          {{ rightPanelCollapsed ? 'mdi-chevron-double-left' : 'mdi-chevron-double-right' }}
-        </v-icon>
+        <v-icon size="20" :icon=" rightPanelCollapsed ? mdiChevronDoubleLeft : mdiChevronDoubleRight " />
       </v-btn>
       <v-btn
         icon
@@ -254,7 +255,7 @@ const handleAddDevice = () => {
         rel="noopener noreferrer"
         title="源码仓库"
       >
-        <v-icon size="20">mdi-github</v-icon>
+        <v-icon size="20" :icon="mdiGithub" />
       </v-btn>
       <a
         class="cta-btn d-none d-sm-inline-flex"
@@ -263,9 +264,9 @@ const handleAddDevice = () => {
         rel="noopener noreferrer"
         title="AI 助手、虚拟屏幕、设备群控、脚本录制回放、性能检测等"
       >
-        <v-icon size="14" class="mr-1">mdi-rocket-launch-outline</v-icon>
+        <v-icon size="14" class="mr-1" :icon="mdiRocketLaunchOutline" />
         加强版 · 免费
-        <v-icon size="12" class="ml-1">mdi-arrow-top-right</v-icon>
+        <v-icon size="12" class="ml-1" :icon="mdiArrowTopRight" />
       </a>
     </div>
   </v-app-bar>
@@ -316,7 +317,7 @@ const handleAddDevice = () => {
                     class="power-btn"
                     @click="handleAddDevice"
                   >
-                    <v-icon size="28">mdi-power</v-icon>
+                    <v-icon size="28" :icon="mdiPower" />
                   </v-btn>
                 </div>
                 <p class="empty-state-title">
@@ -350,7 +351,7 @@ const handleAddDevice = () => {
                 :class="['tab-item', { active: tab === index }]"
                 @click="tab = index"
               >
-                <v-icon size="14">{{ item.icon }}</v-icon>
+                <v-icon size="14" :icon=" item.icon " />
                 <span>{{ item.title }}</span>
               </button>
             </div>

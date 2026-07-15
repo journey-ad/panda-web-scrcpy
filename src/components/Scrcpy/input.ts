@@ -1,4 +1,4 @@
-import { AdbScrcpyClient } from '@yume-chan/adb-scrcpy';
+import { AdbScrcpyClient, type AdbScrcpyOptions3_3_3 } from '@yume-chan/adb-scrcpy';
 // import { AoaHidDevice, HidKeyCode, HidKeyboard } from '@yume-chan/aoa';
 import { type Disposable } from '@yume-chan/event';
 import { AndroidKeyCode, AndroidKeyEventAction, AndroidKeyEventMeta } from '@yume-chan/scrcpy';
@@ -12,7 +12,7 @@ export interface KeyboardInjector extends Disposable {
 }
 
 export class ScrcpyKeyboardInjector implements KeyboardInjector {
-    private readonly client: AdbScrcpyClient;
+    private readonly client: AdbScrcpyClient<AdbScrcpyOptions3_3_3<boolean>>;
 
     private _controlLeft = false;
     private _controlRight = false;
@@ -28,7 +28,7 @@ export class ScrcpyKeyboardInjector implements KeyboardInjector {
 
     private _keys: Set<AndroidKeyCode> = new Set();
 
-    public constructor(client: AdbScrcpyClient) {
+    public constructor(client: AdbScrcpyClient<AdbScrcpyOptions3_3_3<boolean>>) {
         this.client = client;
     }
 
@@ -74,36 +74,36 @@ export class ScrcpyKeyboardInjector implements KeyboardInjector {
     private getMetaState(): AndroidKeyEventMeta {
         let metaState = 0;
         if (this._altLeft) {
-            metaState |= AndroidKeyEventMeta.AltOn | AndroidKeyEventMeta.AltLeftOn;
+            metaState |= AndroidKeyEventMeta.Alt | AndroidKeyEventMeta.AltLeft;
         }
         if (this._altRight) {
-            metaState |= AndroidKeyEventMeta.AltOn | AndroidKeyEventMeta.AltRightOn;
+            metaState |= AndroidKeyEventMeta.Alt | AndroidKeyEventMeta.AltRight;
         }
         if (this._shiftLeft) {
-            metaState |= AndroidKeyEventMeta.ShiftOn | AndroidKeyEventMeta.ShiftLeftOn;
+            metaState |= AndroidKeyEventMeta.Shift | AndroidKeyEventMeta.ShiftLeft;
         }
         if (this._shiftRight) {
-            metaState |= AndroidKeyEventMeta.ShiftOn | AndroidKeyEventMeta.ShiftRightOn;
+            metaState |= AndroidKeyEventMeta.Shift | AndroidKeyEventMeta.ShiftRight;
         }
         if (this._controlLeft) {
-            metaState |= AndroidKeyEventMeta.CtrlOn | AndroidKeyEventMeta.CtrlLeftOn;
+            metaState |= AndroidKeyEventMeta.Ctrl | AndroidKeyEventMeta.CtrlLeft;
         }
         if (this._controlRight) {
-            metaState |= AndroidKeyEventMeta.CtrlOn | AndroidKeyEventMeta.CtrlRightOn;
+            metaState |= AndroidKeyEventMeta.Ctrl | AndroidKeyEventMeta.CtrlRight;
         }
         if (this._metaLeft) {
-            metaState |= AndroidKeyEventMeta.MetaOn | AndroidKeyEventMeta.MetaLeftOn;
+            metaState |= AndroidKeyEventMeta.Meta | AndroidKeyEventMeta.MetaLeft;
         }
         if (this._metaRight) {
-            metaState |= AndroidKeyEventMeta.MetaOn | AndroidKeyEventMeta.MetaRightOn;
+            metaState |= AndroidKeyEventMeta.Meta | AndroidKeyEventMeta.MetaRight;
         }
         if (this._capsLock) {
-            metaState |= AndroidKeyEventMeta.CapsLockOn;
+            metaState |= AndroidKeyEventMeta.CapsLock;
         }
         if (this._numLock) {
-            metaState |= AndroidKeyEventMeta.NumLockOn;
+            metaState |= AndroidKeyEventMeta.NumLock;
         }
-        return metaState;
+        return metaState as AndroidKeyEventMeta;
     }
 
     public async down(key: string): Promise<void> {

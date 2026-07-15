@@ -1,14 +1,10 @@
 import { AdbDaemonWebUsbDeviceManager } from '@yume-chan/adb-daemon-webusb';
 import AdbWebCredentialStore from '@yume-chan/adb-credential-web';
-import { Adb, AdbDaemonTransport, type AdbPacketData } from '@yume-chan/adb';
-import { Consumable, ReadableStream, WritableStream } from '@yume-chan/stream-extra';
+import { Adb, AdbDaemonTransport, type AdbDaemonConnection } from '@yume-chan/adb';
 
 export interface DeviceMeta {
     serial: string;
-    connect: () => Promise<{
-        readable: ReadableStream<AdbPacketData>;
-        writable: WritableStream<Consumable<AdbPacketData>>;
-    }>;
+    connect: () => Promise<AdbDaemonConnection>;
 }
 
 export class AdbClient {
@@ -41,8 +37,8 @@ export class AdbClient {
         if (this.device) {
             await this.disconnect();
         }
-        let readable: ReadableStream<AdbPacketData>;
-        let writable: WritableStream<Consumable<AdbPacketData>>;
+        let readable: AdbDaemonConnection['readable'];
+        let writable: AdbDaemonConnection['writable'];
         try {
             const streams = await deviceMeta.connect();
             readable = streams.readable;
@@ -103,6 +99,10 @@ export class AdbClient {
 
     async getUsbDeviceList() {
         return await AdbDaemonWebUsbDeviceManager.BROWSER!.getDevices();
+    }
+
+    async trackUsbDevices() {
+        return await AdbDaemonWebUsbDeviceManager.BROWSER!.trackDevices();
     }
 }
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { mdiDelete, mdiRestart } from '@mdi/js'
+
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { encodeUtf8 } from '@yume-chan/adb';
 import client from '../Scrcpy/adb-client';
@@ -128,11 +130,11 @@ function clearTerminal() {
             <span class="shell-title">设备终端</span>
             <div class="shell-actions">
                 <v-btn color="primary" variant="text" size="small" @click="startTerminal" class="mr-1">
-                    <v-icon size="16">mdi-restart</v-icon>
+                    <v-icon size="16" :icon="mdiRestart" />
                     重启
                 </v-btn>
                 <v-btn color="secondary" variant="text" size="small" @click="clearTerminal">
-                    <v-icon size="16">mdi-delete</v-icon>
+                    <v-icon size="16" :icon="mdiDelete" />
                     清除
                 </v-btn>
             </div>

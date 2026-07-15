@@ -6,7 +6,7 @@
       :disabled="!isEnabled"
       @click="handleBack"
     >
-      <v-icon>mdi-arrow-left</v-icon>
+      <v-icon :icon="mdiArrowLeft" />
       <v-tooltip activator="parent" location="top">返回</v-tooltip>
     </v-btn>
     
@@ -16,7 +16,7 @@
       :disabled="!isEnabled"
       @click="handleHome"
     >
-      <v-icon>mdi-circle-outline</v-icon>
+      <v-icon :icon="mdiCircleOutline" />
       <v-tooltip activator="parent" location="top">主页</v-tooltip>
     </v-btn>
     
@@ -26,13 +26,15 @@
       :disabled="!isEnabled"
       @click="handleRecents"
     >
-      <v-icon>mdi-square-outline</v-icon>
+      <v-icon :icon="mdiSquareOutline" />
       <v-tooltip activator="parent" location="top">最近任务</v-tooltip>
     </v-btn>
   </div>
 </template>
 
 <script setup lang="ts">
+import { mdiArrowLeft, mdiCircleOutline, mdiSquareOutline } from '@mdi/js'
+
 import { computed } from 'vue';
 import type { RemoteControlCommand } from '@/services/command-types';
 
