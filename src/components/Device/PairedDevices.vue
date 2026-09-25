@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { mdiCellphone, mdiCellphoneLink, mdiCheckCircle, mdiChevronDown, mdiClose, mdiPlus } from '@mdi/js'
+import { mdiCellphone, mdiCellphoneLink, mdiCheckCircle, mdiChevronDown, mdiClose, mdiPlus, mdiWifi } from '@mdi/js'
 
 import { ref, onMounted, shallowRef, watch, computed, onUnmounted } from 'vue';
-import client from '../Scrcpy/adb-client';
+import client, { type DeviceMeta } from '../Scrcpy/adb-client';
+import { connectWifiBridge } from '../Scrcpy/wifi-connection';
 import { AdbDaemonWebUsbDeviceObserver, AdbDaemonWebUsbDevice } from '@yume-chan/adb-daemon-webusb';
 import DeviceGuide from './DeviceGuide.vue';
 
@@ -20,9 +21,11 @@ const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('disco
 const autoReconnectAttempts = ref(0);
 const maxAutoReconnectAttempts = 3;
 const disconnectionMessage = ref('');
+const wifiUrl = ref('');
+const wifiDeviceList = shallowRef<DeviceMeta[]>([]);
 
 const deviceList = computed(() => {
-    return [...usbDeviceList.value];
+    return [...usbDeviceList.value, ...wifiDeviceList.value];
 });
 
 const deviceOptions = computed(() => {
@@ -30,6 +33,9 @@ const deviceOptions = computed(() => {
 });
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const displayName = (device: DeviceMeta | AdbDaemonWebUsbDevice) =>
+    (device as AdbDaemonWebUsbDevice).name || device.serial;
 
 /** USB/ADB 传输层疑似被占用（本页或其它客户端未释放）时可先 disconnect 再重连 */
 const isTransportOccupiedError = (e: unknown): boolean => {
@@ -141,6 +147,7 @@ const removeDevice = async (serial: string) => {
         connectionStatus.value = 'disconnected';
     }
     usbDeviceList.value = usbDeviceList.value.filter((device) => device.serial !== serial);
+    wifiDeviceList.value = wifiDeviceList.value.filter((device) => device.serial !== serial);
     emit('remove-device', serial);
     isLoading.value = false;
 };
@@ -221,6 +228,46 @@ const openMenu = () => {
     showDevices.value = true;
 };
 
+const connectWifiDevice = async () => {
+    const url = wifiUrl.value.trim();
+    if (!url) {
+        return;
+    }
+
+    errorMessage.value = '';
+    errorDetails.value = '';
+    connectionStatus.value = 'connecting';
+    isLoading.value = true;
+    emit('update-connection-status', false);
+    try {
+        const meta: DeviceMeta = {
+            serial: url,
+            connect: () => connectWifiBridge(url),
+            initialDelayedAckBytes: 0,
+        };
+        await client.connect(meta);
+        if (!wifiDeviceList.value.some((device) => device.serial === url)) {
+            wifiDeviceList.value = [...wifiDeviceList.value, meta];
+        }
+        selected.value = meta as unknown as AdbDaemonWebUsbDevice;
+        connectionStatus.value = 'connected';
+        showDevices.value = false;
+        emit('pair-device', meta);
+        emit('update-connection-status', true);
+        deviceInfo.value = {
+            model: client.deviceName || url,
+            androidVersion: 'Unknown',
+        };
+    } catch {
+        errorMessage.value = 'Wi-Fi 设备连接失败';
+        errorDetails.value = '请确认桥接地址可以访问，并确认设备已开启 TCP 调试端口';
+        emit('update-connection-status', false);
+        connectionStatus.value = 'disconnected';
+    } finally {
+        isLoading.value = false;
+    }
+};
+
 defineExpose({ handleAddDevice, openMenu });
 </script>
 
@@ -293,7 +340,7 @@ defineExpose({ handleAddDevice, openMenu });
                             <v-icon size="20" color="secondary" :icon="mdiCellphone" />
                         </div>
                         <div class="dd-item-info">
-                            <span class="dd-item-name">{{ device.name || device.serial }}</span>
+                            <span class="dd-item-name">{{ displayName(device) }}</span>
                             <span class="dd-item-serial">{{ device.serial }}</span>
                         </div>
                         <v-icon
@@ -310,6 +357,24 @@ defineExpose({ handleAddDevice, openMenu });
                             <v-icon size="16" :icon="mdiClose" />
                         </button>
                     </div>
+                </div>
+
+                <div class="dd-section dd-wifi">
+                    <input
+                        v-model="wifiUrl"
+                        class="dd-input"
+                        placeholder="桥接地址，如 ws://127.0.0.1:8888"
+                        @keyup.enter="connectWifiDevice"
+                    />
+                    <button
+                        class="dd-wifi-btn"
+                        :disabled="!wifiUrl.trim() || isLoading"
+                        @click="connectWifiDevice"
+                    >
+                        <v-icon size="16" :icon="mdiWifi" />
+                        通过 Wi-Fi 连接
+                    </button>
+                    <p class="dd-hint">需要先在设备上开启 TCP 调试端口，并让桥接程序转发到该端口</p>
                 </div>
 
                 <div class="dd-footer">
@@ -438,6 +503,59 @@ defineExpose({ handleAddDevice, openMenu });
 
 .dd-list {
     padding: 0 6px 4px;
+}
+
+.dd-wifi {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dd-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    font-size: 13px;
+    color: rgba(24, 24, 27, 0.85);
+    outline: none;
+}
+
+.dd-input:focus {
+    border-color: var(--border-hover);
+}
+
+.dd-wifi-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(24, 24, 27, 0.7);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.dd-wifi-btn:hover:not(:disabled) {
+    background: rgba(24, 24, 27, 0.03);
+    border-color: var(--border-hover);
+}
+
+.dd-wifi-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dd-hint {
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(24, 24, 27, 0.45);
 }
 
 .dd-item {

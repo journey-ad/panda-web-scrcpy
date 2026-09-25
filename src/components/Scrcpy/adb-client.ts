@@ -1,10 +1,18 @@
 import { AdbDaemonWebUsbDeviceManager } from '@yume-chan/adb-daemon-webusb';
 import AdbWebCredentialStore from '@yume-chan/adb-credential-web';
-import { Adb, AdbDaemonTransport, type AdbDaemonConnection } from '@yume-chan/adb';
+import {
+    ADB_DAEMON_DEFAULT_INITIAL_PAYLOAD_SIZE,
+    Adb,
+    AdbDaemonTransport,
+    type AdbDaemonConnection,
+} from '@yume-chan/adb';
+import { connectWifiBridge } from './wifi-connection';
 
 export interface DeviceMeta {
     serial: string;
     connect: () => Promise<AdbDaemonConnection>;
+    /** 桥接转发不支持延迟确认，需把初始窗口降为 0；USB 直连保持默认值 */
+    initialDelayedAckBytes?: number;
 }
 
 export class AdbClient {
@@ -57,12 +65,23 @@ export class AdbClient {
                 serial: deviceMeta.serial,
                 connection: { readable, writable },
                 credentialStore: this.credentialStore,
+                initialDelayedAckBytes:
+                    deviceMeta.initialDelayedAckBytes ?? ADB_DAEMON_DEFAULT_INITIAL_PAYLOAD_SIZE,
             })
         );
         this.serial = await this.device.getProp('ro.serialno');
         this.name = await this.device.getProp('ro.product.model');
 
         return this.device;
+    }
+
+    /** 通过 WebSocket 桥连接设备，serial 使用桥接地址 */
+    async connectWifi(url: string) {
+        return await this.connect({
+            serial: url,
+            connect: () => connectWifiBridge(url),
+            initialDelayedAckBytes: 0,
+        });
     }
 
     async disconnect() {
@@ -76,8 +95,8 @@ export class AdbClient {
     }
 
     /**
-     * 结束设备上可能残留的 scrcpy 服务端，避免端口/进程占用导致无法再次投屏。
-     * 依赖已建立的 Adb 会话；失败时静默忽略。
+     * 结束设备上可能残留的 scrcpy 服务端，释放被占用的端口与进程
+     * 依赖已建立的 Adb 会话；失败时静默忽略
      */
     async killScrcpyServerOnDevice(): Promise<void> {
         const adb = this.device;
