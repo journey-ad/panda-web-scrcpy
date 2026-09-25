@@ -1,5 +1,5 @@
 <script setup>
-import { mdiArrowTopRight, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiConsole, mdiGithub, mdiInformationOutline, mdiPackageVariantClosed, mdiPower, mdiRocketLaunchOutline, mdiTextBoxSearchOutline } from '@mdi/js'
+import { mdiAlertOutline, mdiArrowTopRight, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiClose, mdiConsole, mdiGithub, mdiInformationOutline, mdiPackageVariantClosed, mdiPower, mdiRocketLaunchOutline, mdiTextBoxSearchOutline } from '@mdi/js'
 
 import { ref, computed, onMounted, onUnmounted, shallowRef, watch, defineAsyncComponent } from "vue";
 import { useDisplay } from "vuetify";
@@ -53,6 +53,14 @@ const startWidth = ref(0);
 const deviceMeta = shallowRef(undefined);
 const connected = ref(false);
 const tab = ref(0);
+
+/** USB 3 的 bulk 端点 packetSize 为 1024，USB 2 为 512 及以下 */
+const slowLink = computed(() => {
+  const endpoints = deviceMeta.value?.raw?.configuration?.interfaces?.[0]?.alternates?.[0]?.endpoints ?? [];
+  return endpoints.some((ep) => ep.packetSize <= 512);
+});
+
+const usbHintClosed = ref(false);
 
 const isHorizontalLayout = computed(() => {
   return containerSize.value.width > leftPanelWidth.value + 200;
@@ -321,7 +329,7 @@ const handleAddDevice = () => {
                   </v-btn>
                 </div>
                 <p class="empty-state-title">
-                  {{ state.connecting ? '正在连接...' : '连接设备' }}
+                  {{ state.connecting ? '正在连接…' : '连接设备' }}
                 </p>
                 <p class="empty-state-desc">
                   {{ state.connecting ? '请稍候' : '确保设备已开启 USB 调试模式' }}
@@ -344,6 +352,13 @@ const handleAddDevice = () => {
       >
         <div class="panel-card right-card">
           <template v-if="connected">
+            <div v-if="slowLink && !usbHintClosed" class="usb-hint">
+              <v-icon size="14" :icon="mdiAlertOutline" />
+              <span>当前为 USB 2.0 连接，读取大文件可能中断，建议更换 USB 3 数据线与接口</span>
+              <button class="usb-hint-close" title="关闭提示" @click="usbHintClosed = true">
+                <v-icon size="14" :icon="mdiClose" />
+              </button>
+            </div>
             <div class="tab-bar">
               <button
                 v-for="(item, index) in tabs"
@@ -480,6 +495,35 @@ const handleAddDevice = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.usb-hint {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #854f0b;
+  background: #faeeda;
+  border-bottom: 1px solid var(--border);
+}
+
+.usb-hint-close {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.usb-hint-close:hover {
+  opacity: 1;
 }
 
 .tab-bar {

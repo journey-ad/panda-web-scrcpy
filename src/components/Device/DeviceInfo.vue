@@ -8,6 +8,8 @@ import StorageInfo from './StorageInfo.vue';
 import client from '../Scrcpy/adb-client';
 import { Adb } from '@yume-chan/adb';
 
+defineProps<{ deviceMeta?: object }>();
+
 const device = computed(() => client.device || undefined);
 const isLoading = ref(true);
 
@@ -249,7 +251,7 @@ onMounted(async () => {
         </div>
         <div v-else class="info-grid">
             <div class="basic-info-container">
-                <DeviceBasicInfo :deviceInfo="deviceInfo" />
+                <DeviceBasicInfo :deviceInfo="deviceInfo" :deviceMeta="deviceMeta" />
                 <v-btn
                     class="refresh-btn"
                     :icon="mdiRefresh"
