@@ -1,0 +1,61 @@
+diff --git a/src/views/AbstractList.vue b/src/views/AbstractList.vue
+index 228262e..b37535c 100644
+--- a/src/views/AbstractList.vue
++++ b/src/views/AbstractList.vue
+@@ -19,7 +19,7 @@
+         </div>
+       </div>
+ 
+-      <a
++      <!-- <a
+         class="cta-banner"
+         href="https://www.pandatest.net/device"
+         target="_blank"
+@@ -31,7 +31,7 @@
+           <small>AI 助手 · 虚拟屏幕 · 设备群控 · 脚本录制回放 · 性能检测等功能，免费使用</small>
+         </span>
+         <v-icon size="16" class="cta-arrow" :icon="mdiArrowRight" />
+-      </a>
++      </a> -->
+     </div>
+   </div>
+ </template>
+diff --git a/src/views/DeviceView.vue b/src/views/DeviceView.vue
+index 510fb12..5519608 100644
+--- a/src/views/DeviceView.vue
++++ b/src/views/DeviceView.vue
+@@ -260,14 +260,14 @@ const handleAddDevice = () => {
+         variant="text"
+         size="small"
+         color="secondary"
+-        href="https://github.com/pandatestgrid/panda-web-scrcpy"
++        href="https://github.com/journey-ad/panda-web-scrcpy"
+         target="_blank"
+         rel="noopener noreferrer"
+         title="源码仓库"
+       >
+         <v-icon size="20" :icon="mdiGithub" />
+       </v-btn>
+-      <a
++      <!-- <a
+         class="cta-btn d-none d-sm-inline-flex"
+         href="https://www.pandatest.net/device"
+         target="_blank"
+@@ -277,7 +277,7 @@ const handleAddDevice = () => {
+         <v-icon size="14" class="mr-1" :icon="mdiRocketLaunchOutline" />
+         加强版 · 免费
+         <v-icon size="12" class="ml-1" :icon="mdiArrowTopRight" />
+-      </a>
++      </a> -->
+     </div>
+   </v-app-bar>
+ 
+@@ -582,7 +582,7 @@ const handleAddDevice = () => {
+       right: 16px;
+       height: 2px;
+       background: rgb(var(--v-theme-primary));
+-      
++
+     }
+   }
+ }
