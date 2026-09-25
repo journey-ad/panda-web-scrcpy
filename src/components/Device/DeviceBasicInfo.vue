@@ -54,6 +54,10 @@
           <span class="info-value">{{ deviceInfo.storageType }}</span>
         </div>
         <div class="info-item info-item--span">
+          <span class="info-label">连接类型</span>
+          <span class="info-value">{{ usbLink }}</span>
+        </div>
+        <div class="info-item info-item--span">
           <span class="info-label">开机</span>
           <span class="info-value">{{ uptime }}</span>
         </div>
@@ -73,7 +77,18 @@ const props = defineProps({
   deviceInfo: {
     type: Object,
     required: true
+  },
+  deviceMeta: {
+    type: Object,
+    default: undefined
   }
+});
+
+/** USB 3 的 bulk 端点 packetSize 为 1024，USB 2 为 512 及以下 */
+const usbLink = computed(() => {
+  const endpoints = props.deviceMeta?.raw?.configuration?.interfaces?.[0]?.alternates?.[0]?.endpoints ?? [];
+  if (!endpoints.length) return '—';
+  return endpoints.some((ep) => ep.packetSize <= 512) ? 'USB 2.0 · High Speed' : 'USB 3 · SuperSpeed';
 });
 
 const bootloaderStatus = computed(() => {
