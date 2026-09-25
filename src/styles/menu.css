@@ -1,0 +1,125 @@
+/*
+ * 浮层菜单的统一外观：v-menu 下拉（排序、文本编码、日志级别选择）与手写的右键菜单。
+ * 与 PairedDevices 里手写的设备下拉面板同一套语言：白底、1px 描边、圆角加柔和投影；
+ * 条目 34px 高、13px 字、悬停浅灰、当前项用文件列表选中行同款的靛蓝。
+ * 引入位置在 vuetify/styles 之后；选择器多带一层 .v-list，避免与 Vuetify 的
+ * density 规则同权重时被加载顺序左右。
+ */
+
+:root {
+  --menu-radius: 8px;
+  --menu-item-radius: 6px;
+  --menu-shadow: 0 10px 28px -8px rgba(24, 24, 27, 0.18), 0 2px 6px rgba(24, 24, 27, 0.06);
+  --menu-active: rgba(99, 102, 241, 0.08);
+}
+
+/* ---------------------------------- 面板 ---------------------------------- */
+
+.v-overlay.v-menu > .v-overlay__content {
+  border: 1px solid var(--border);
+  border-radius: var(--menu-radius);
+  box-shadow: var(--menu-shadow);
+}
+
+/* 列表与 v-select 的内层 sheet 各带一层 Material 投影，去掉，投影只留面板这一层 */
+.v-overlay.v-menu > .v-overlay__content > .v-list,
+.v-overlay.v-menu > .v-overlay__content > .v-sheet {
+  border-radius: inherit;
+  box-shadow: none;
+}
+
+.v-overlay.v-menu .v-list,
+.fm-context .v-list {
+  padding: 6px;
+}
+
+/* 右键菜单的列表要跟着容器一起圆角（下拉菜单里的列表由 .v-menu 的规则接管） */
+.fm-context .v-list {
+  border-radius: inherit;
+}
+
+.v-overlay.v-menu .v-divider,
+.fm-context .v-divider {
+  margin: 4px 6px;
+  border-color: var(--border);
+  opacity: 1;
+}
+
+/* ---------------------------------- 条目 ---------------------------------- */
+
+.v-overlay.v-menu .v-list .v-list-item,
+.fm-context .v-list .v-list-item {
+  min-height: 34px;
+  padding: 0 10px;
+  /* Vuetify 会给每个 list-item 挂上 rounded-0（带了 !important），只能用 !important 盖掉 */
+  border-radius: var(--menu-item-radius) !important;
+  color: rgba(24, 24, 27, 0.8);
+  font-size: 13px;
+  /* 图标与文字的间距默认 32px，菜单里过散 */
+  --v-list-prepend-gap: 12px;
+  /* 当前项用固定底色，不吃 Vuetify 默认的 currentColor 叠加 */
+  --v-activated-opacity: 0;
+}
+
+.v-overlay.v-menu .v-list .v-list-item-title,
+.fm-context .v-list .v-list-item-title {
+  font-size: 13px;
+  color: inherit;
+}
+
+.v-overlay.v-menu .v-list .v-list-item-subtitle,
+.fm-context .v-list .v-list-item-subtitle {
+  font-size: 11px;
+  color: rgba(24, 24, 27, 0.4);
+}
+
+.v-overlay.v-menu .v-list .v-list-item .v-list-item__prepend > .v-icon,
+.fm-context .v-list .v-list-item .v-list-item__prepend > .v-icon {
+  font-size: 18px;
+  color: rgba(24, 24, 27, 0.45);
+  opacity: 1;
+}
+
+/* 当前项：与文件列表的选中行同一抹靛蓝 */
+.v-overlay.v-menu .v-list .v-list-item--active,
+.fm-context .v-list .v-list-item--active {
+  background: var(--menu-active);
+}
+
+.v-overlay.v-menu .v-list .v-list-item--active .v-list-item-title {
+  font-weight: 500;
+  color: rgba(24, 24, 27, 0.9);
+}
+
+.v-overlay.v-menu .v-list .v-list-item--active .v-list-item__prepend > .v-icon,
+.v-overlay.v-menu .v-list .v-list-item--active .v-list-item__append > .v-icon {
+  color: rgb(var(--v-theme-accent));
+  opacity: 1;
+}
+
+/* -------------------------------- 右键菜单 -------------------------------- */
+
+/* 定位、层级与入场动画在 FileManager.vue，这里只统一外观 */
+.fm-context {
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid var(--border);
+  border-radius: var(--menu-radius);
+  box-shadow: var(--menu-shadow);
+}
+
+/* 危险项（删除）：静态只有图标带红，悬停才整体转红 */
+.fm-context .v-list-item.fm-context-danger {
+  --v-hover-opacity: 0;
+}
+
+.fm-context .v-list-item.fm-context-danger .v-list-item__prepend > .v-icon {
+  color: rgba(239, 68, 68, 0.75);
+}
+
+.fm-context .v-list-item.fm-context-danger:hover {
+  background: rgba(239, 68, 68, 0.07);
+}
+
+.fm-context .v-list-item.fm-context-danger:hover .v-list-item-title {
+  color: rgb(var(--v-theme-error));
+}

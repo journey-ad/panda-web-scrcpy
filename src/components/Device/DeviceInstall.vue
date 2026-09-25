@@ -174,6 +174,7 @@ const formatFileSize = (size: number) => {
                     <v-progress-linear
                         v-if="progress"
                         :model-value="progress.value * 100"
+                        :style="{ '--progress': progress.value * 100 + '%' }"
                         height="25"
                         color="primary"
                         class="mb-4"

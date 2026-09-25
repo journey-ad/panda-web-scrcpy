@@ -118,6 +118,7 @@
           <v-progress-linear
             v-if="exportProgress"
             :model-value="exportProgress"
+            :style="{ '--progress': exportProgress + '%' }"
             height="25"
             color="info"
           >
