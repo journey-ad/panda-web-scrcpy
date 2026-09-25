@@ -1,0 +1,65 @@
+/*
+ * 进度条上的百分比文字同时落在两种底色上：填充内与未填充的轨道。
+ * 进度条的填充与底色都取自 currentColor，文字继承同一色，过半后深色字压在同色填充上看不出。
+ *
+ * 差分混合（mix-blend-mode: difference）能自动反相，但对彩色填充会算出互补色（info 蓝底出棕黄），
+ * 且 CSS 没有按明度取差的混合模式，无法把结果收敛到中性色。
+ * 因此改为按填充边界把文字切成两段：填充内白字、轨道上黑字，恒为纯黑纯白。
+ * 边界位置取自调用处随 :model-value 一起传入的 --progress，与填充宽度同源。
+ * 轨道是 currentColor 的 12% 透明度，无论填充取什么色都是浅底，黑字都读得清。
+ */
+
+/*
+ * 注册成 <percentage> 才能对 --progress 本身加过渡。
+ * 否则它是不支持动画的自定义属性，改动是瞬时跳变，
+ * 而填充的 width 走 Vuetify 的 0.2s 缓动——两边不同步，
+ * 填充还没走到位时分界已经跑到目标位置（实测 40%→80% 跳到 30ms 时差了 438px）。
+ */
+@property --progress {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
+.v-progress-linear__content strong {
+  /* 撑满整条，让渐变的百分比坐标与填充宽度对齐 */
+  display: block;
+  width: 100%;
+  text-align: center;
+  /* 文字只作为裁剪形状，颜色全部来自下面的渐变 */
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    #fff var(--progress, 0%),
+    #000 var(--progress, 0%)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  /* 与 .v-progress-linear__determinate 的 width 过渡保持同一条曲线，
+     两边从同一个值同时开始、同样的时长与缓动，分界才始终压在填充边缘上 */
+  transition: --progress 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+ * 兜底：拿不到「--progress 过渡」的浏览器（不支持注册自定义属性）不做逐帧同步，
+ * 整段文字按 50% 阈值跳变成黑或白。文字在条上居中，标签本身只占条宽很小一段，
+ * 50% 正是它左右两侧的交界，整段换色不会出现半截字压在同色底上看不清。
+ * CSS 没有比较手段，阈值判断用 clamp 把 --progress 量化成 0% 或 100% 完成：
+ * 低于 50% 算出负值被夹到 0%，渐变整段是 #000；不低于 50% 算出超界值被夹到 100%，整段是 #fff。
+ * 由 main.js 探测后在根元素上加 .no-registered-props。
+ */
+.no-registered-props .v-progress-linear__content strong {
+  background-image: linear-gradient(
+    90deg,
+    #fff clamp(0%, calc((var(--progress, 0%) - 50%) * 1000), 100%),
+    #000 clamp(0%, calc((var(--progress, 0%) - 50%) * 1000), 100%)
+  );
+  /* 不做逐帧同步，也就不需要过渡；顺带让强制走兜底的场景与真实不支持的浏览器行为一致 */
+  transition: none;
+}
+
+/* 对话框里的进度条文字会命中 dialog.css 的 .v-card-text strong，
+   那条规则直接定死深色，这里多带一层 .v-progress-linear__content 压过它 */
+.v-overlay.v-dialog > .v-overlay__content > .v-card > .v-card-text .v-progress-linear__content strong {
+  color: transparent;
+}

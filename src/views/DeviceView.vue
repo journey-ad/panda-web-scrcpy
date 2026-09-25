@@ -1,5 +1,5 @@
 <script setup>
-import { mdiAlertOutline, mdiArrowTopRight, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiClose, mdiConsole, mdiGithub, mdiInformationOutline, mdiPackageVariantClosed, mdiPower, mdiRocketLaunchOutline, mdiTextBoxSearchOutline } from '@mdi/js'
+import { mdiAlertOutline, mdiArrowTopRight, mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiClose, mdiConsole, mdiFolderMultipleOutline, mdiGithub, mdiInformationOutline, mdiPackageVariantClosed, mdiPower, mdiRocketLaunchOutline, mdiTextBoxSearchOutline } from '@mdi/js'
 
 import { ref, computed, onMounted, onUnmounted, shallowRef, watch, defineAsyncComponent } from "vue";
 import { useDisplay } from "vuetify";
@@ -13,6 +13,7 @@ import ShareButton from '../components/Remote/ShareButton.vue'
 
 const DeviceInfo = defineAsyncComponent(() => import("../components/Device/DeviceInfo.vue"));
 const AppManager = defineAsyncComponent(() => import("../components/Device/AppManager.vue"));
+const FileManager = defineAsyncComponent(() => import("../components/Device/FileManager.vue"));
 const DeviceShell = defineAsyncComponent(() => import("../components/Device/DeviceShell.vue"));
 const DeviceLogcat = defineAsyncComponent(() => import("../components/Device/DeviceLogcat.vue"));
 
@@ -204,6 +205,7 @@ watch(width, (newWidth, oldWidth) => {
 const tabs = [
   { title: "基础信息", icon: mdiInformationOutline, component: DeviceInfo },
   { title: "应用管理", icon: mdiPackageVariantClosed, component: AppManager },
+  { title: "文件管理", icon: mdiFolderMultipleOutline, component: FileManager },
   { title: "终端", icon: mdiConsole, component: DeviceShell },
   { title: "Logcat", icon: mdiTextBoxSearchOutline, component: DeviceLogcat },
 ];
@@ -537,6 +539,7 @@ const handleAddDevice = () => {
 
 .tab-item {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -551,6 +554,17 @@ const handleAddDevice = () => {
   position: relative;
   transition: color 0.15s ease;
   white-space: nowrap;
+
+  /* 页签数量增加后，窄侧栏下让标题省略而不是溢出 */
+  .v-icon {
+    flex-shrink: 0;
+  }
+
+  > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   &:hover {
     color: rgba(24, 24, 27, 0.85);

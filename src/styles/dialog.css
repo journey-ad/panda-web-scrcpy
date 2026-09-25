@@ -1,0 +1,109 @@
+/*
+ * 对话框的统一外观：与 menu.css 同一套浮层语言——白底、1px 描边、圆角加柔和投影。
+ * 标题、内容、操作三段沿用 v-card-title / v-card-text / v-card-actions 分区，
+ * 这里只统一间距、字号与分隔线，各处弹窗不必再各写一份。
+ * 选择器与 Vuetify 同形（多带一层 .v-dialog），按加载顺序稳定覆盖其默认值。
+ * 引入位置在 vuetify/styles 之后。
+ */
+
+:root {
+  --dialog-radius: 12px;
+  --dialog-pad: 20px;
+  --dialog-shadow: 0 16px 40px -12px rgba(24, 24, 27, 0.22), 0 2px 8px rgba(24, 24, 27, 0.06);
+}
+
+/* ---------------------------------- 面板 ---------------------------------- */
+
+/* 选择器比 Vuetify 的组件样式多一层 .v-overlay：组件的 css 由 vite-plugin-vuetify
+ * 在组件导入时注入，排在本文之后，同权重会被它盖掉。 */
+
+.v-overlay.v-dialog > .v-overlay__content > .v-card {
+  border: 1px solid var(--border);
+  /* VCard 的默认配置让每张卡片都挂上 rounded-0（带 !important），只能同样用 !important 盖掉 */
+  border-radius: var(--dialog-radius) !important;
+  /* 去掉 Material 的三层投影，与下拉菜单同一层柔和投影 */
+  box-shadow: var(--dialog-shadow);
+}
+
+/* 全屏铺满窗口，圆角与描边会露出遮罩 */
+.v-overlay.v-dialog--fullscreen > .v-overlay__content > .v-card {
+  border: none;
+  border-radius: 0 !important;
+}
+
+/* ---------------------------------- 分区 ---------------------------------- */
+
+.v-overlay.v-dialog > .v-overlay__content > .v-card > .v-card-title {
+  padding: 16px var(--dialog-pad) 0;
+  border-radius: var(--dialog-radius) var(--dialog-radius) 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: rgba(24, 24, 27, 0.85);
+}
+
+.v-overlay.v-dialog > .v-overlay__content > .v-card > .v-card-text {
+  padding: 12px var(--dialog-pad) 20px;
+  font-size: 13px;
+  letter-spacing: 0;
+  line-height: 1.6;
+  color: rgba(24, 24, 27, 0.7);
+}
+
+.v-overlay.v-dialog > .v-overlay__content > .v-card > .v-card-text strong {
+  font-weight: 600;
+  color: rgba(24, 24, 27, 0.9);
+}
+
+.v-overlay.v-dialog > .v-overlay__content > .v-card > .v-card-actions {
+  min-height: 0;
+  padding: 12px var(--dialog-pad);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--dialog-radius) var(--dialog-radius);
+}
+
+.v-overlay.v-dialog > .v-overlay__content > .v-card > .v-card-actions .v-btn {
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+/* ----------------------------- 提示条与说明 ----------------------------- */
+
+/* 危险操作的提示条，删除、覆盖安装这类确认共用 */
+.dialog-alert {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.24);
+  background: rgba(239, 68, 68, 0.06);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #dc2626;
+}
+
+/* 次要说明：补前提、限制与保留项，比正文弱一级 */
+.dialog-note {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* 连着几条说明时收紧成一个段落 */
+.dialog-note + .dialog-note {
+  margin-top: 4px;
+}
+
+/* ---------------------------------- 输入框 --------------------------------- */
+
+/* 错误提示只在出现时占高度：详情区默认常留一行空白，没有消息时整个收起 */
+.v-overlay.v-dialog .v-input__details:not(:has(.v-messages__message)) {
+  display: none;
+}
+
+/* 说明下面紧跟输入框时，给浮起的标签留出位置 */
+.dialog-note:has(+ .v-input) {
+  margin-bottom: 14px;
+}
