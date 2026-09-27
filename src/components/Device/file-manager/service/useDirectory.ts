@@ -7,7 +7,7 @@ import type { FileGroup } from '../format/plugin';
 import type { SortKey } from '../shared/settings';
 import { useSettings } from '../shared/settings';
 import type { FileEntry, RawEntry } from '../model/types';
-import { errorText, joinPath, parentPath } from '../shared/utils';
+import { compareName, errorText, joinPath, parentPath } from '../shared/utils';
 
 /** 主目录，初始路径与"回到主目录"都用它 */
 export const HOME_PATH = '/sdcard';
@@ -17,9 +17,6 @@ export type FileFilter = 'all' | FileGroup;
 
 /** 搜索框输入后延迟过滤，大目录里逐字重排代价太高 */
 const SEARCH_DEBOUNCE = 200;
-
-/** 名称比较统一用一个实例，逐次新建比较器的开销比比较本身还大 */
-const compareName = new Intl.Collator('zh-Hans-CN', { numeric: true }).compare;
 
 interface DirectoryOptions {
   notify: (text: string, type?: 'error' | 'success') => void;

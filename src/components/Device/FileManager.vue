@@ -100,7 +100,6 @@ const clearSelection = () => browser.value?.clearSelection();
  */
 const {
   currentPath,
-  entries,
   loading,
   searchInput,
   search,
@@ -163,8 +162,9 @@ const {
 /* 选区可能上千项，判定统一用集合查找 */
 const selectedSet = computed(() => new Set(selectedPaths.value));
 
+/* 按列表当前的排序取选区，下载与命令的先后与看到的顺序一致 */
 const selectedEntries = computed(() =>
-  entries.value.filter((entry) => selectedSet.value.has(entry.path))
+  visibleEntries.value.filter((entry) => selectedSet.value.has(entry.path))
 );
 
 const selectedFiles = computed(() => selectedEntries.value.filter((entry) => !entry.isDirectory));

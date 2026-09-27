@@ -156,7 +156,7 @@ export const useFileTasks = (options: TaskOptions) => {
     }
   };
 
-  /** 按批执行设备命令，进度按条数推进；中途失败时已完成的部分仍然要反映到列表上 */
+  /** 按批执行设备命令，进度按条数推进；批次失败时跳过该批继续，已完成的部分仍然要反映到列表上 */
   const runEach = async (
     verb: string,
     list: FileEntry[],
@@ -166,6 +166,7 @@ export const useFileTasks = (options: TaskOptions) => {
     const count = list.length;
     const size = Math.max(run.batch ?? 1, 1);
     const finished: FileEntry[] = [];
+    const failures: unknown[] = [];
     const progress = () => (count > 1 ? `已完成 ${finished.length} / ${count} 项` : '');
     // 一批命令一次处理多个条目，名称固定用任务首个条目，条数用任务总数
     const batched = size > 1 && count > 1;
@@ -178,36 +179,39 @@ export const useFileTasks = (options: TaskOptions) => {
       hint: run.hint ?? TRANSFER_HINT,
       indeterminate: size > 1,
     };
-    let failure: unknown = null;
     const startedAt = Date.now();
     try {
       for (let start = 0; start < count; start += size) {
         const group = list.slice(start, start + size);
         report({ name: headline || group[0].name, detail: progress() });
-        await step(group);
-        finished.push(...group);
+        try {
+          await step(group);
+          finished.push(...group);
+        } catch (error) {
+          // 一批失败不打断其余批次，原因留到任务结束后一起提示
+          failures.push(error);
+        }
         report({ value: finished.length / count, detail: progress() });
       }
-    } catch (error) {
-      failure = error;
-    }
-    try {
-      if (run.settle) {
+      if (failures.length) {
+        // 一批里逐条的结果可能有偏差，失败时以设备上的实际内容为准
+        await reload();
+      } else if (run.settle) {
         run.settle(finished);
-      } else if (!failure) {
+      } else if (finished.length) {
         await reload();
       }
     } finally {
       // 先把进度填满再关窗口，弹窗关闭时已显示完成
-      report({ value: failure ? finished.length / count : 1, detail: progress(), indeterminate: false });
+      report({ value: failures.length ? finished.length / count : 1, detail: progress(), indeterminate: false });
       await nextTick();
       await wait(Math.max(0, MIN_VISIBLE - (Date.now() - startedAt)));
       task.value = null;
     }
-    if (failure) {
+    if (failures.length) {
       // 中途失败时已完成的部分已经生效，提示里要说清进度
       const done = finished.length ? `，已完成 ${finished.length} / ${count} 项` : '';
-      notify(`${failText(verb, failure)}${done}`, 'error');
+      notify(`${failText(verb, failures[0])}${done}`, 'error');
     } else {
       notify(`已${verb} ${finished.length} 项`);
     }
@@ -222,36 +226,51 @@ export const useFileTasks = (options: TaskOptions) => {
     // 多个文件先选一个本地目录，逐个写入，比连开多次下载省事
     const dir = files.length > 1 ? await chooseDirectory() : undefined;
     if (dir === null) return;
+    const count = files.length;
+    /** 单个文件占整体进度的区间，设备给出的长度偏小时读满即止 */
+    const progressOf = (index: number, read: number, size: number) =>
+      (index + (size > 0 ? Math.min(read / size, 1) : 1)) / count;
     let saved = 0;
+    const failures: unknown[] = [];
+    // 任务只在开始时建一次，逐个文件只改名称与详情，进度不回到 0
+    task.value = {
+      title: '正在下载',
+      name: files[0].name,
+      value: 0,
+      detail: detailOf(0, count, `0 B / ${formatSize(files[0].size)}`),
+      hint: TRANSFER_HINT,
+    };
     try {
       for (const [index, file] of files.entries()) {
-        const total = Math.max(file.size, 1);
-        task.value = {
-          title: '正在下载',
-          name: file.name,
-          value: 0,
-          detail: detailOf(index, files.length, `0 B / ${formatSize(file.size)}`),
-          hint: TRANSFER_HINT,
-        };
-        const chunks = await readFile(file.path, {
-          onProgress: (read) => {
-            report({
-              value: files.length === 1 ? read / total : (index + read / total) / files.length,
-              detail: detailOf(index, files.length, `${formatSize(read)} / ${formatSize(file.size)}`),
-            });
-          },
-        });
-        if (dir) await writeInto(dir, file.name, chunks);
-        else saveAs(new Blob(chunks as BlobPart[], { type: mimeOf(file.name) }), file.name);
-        saved += 1;
+        report({ name: file.name, detail: detailOf(index, count, `0 B / ${formatSize(file.size)}`) });
+        try {
+          const chunks = await readFile(file.path, {
+            onProgress: (read) => {
+              report({
+                value: progressOf(index, read, file.size),
+                detail: detailOf(index, count, `${formatSize(read)} / ${formatSize(file.size)}`),
+              });
+            },
+          });
+          if (dir) await writeInto(dir, file.name, chunks);
+          else saveAs(new Blob(chunks as BlobPart[], { type: mimeOf(file.name) }), file.name);
+          saved += 1;
+        } catch (error) {
+          // 一个文件失败不打断其余文件，原因留到任务结束后一起提示
+          failures.push(error);
+        }
+        // 失败的那一项也要把进度交给下一项，整体进度保持递增
+        report({ value: (index + 1) / count });
       }
-      notify(`已下载 ${files.length} 个文件`);
-    } catch (error) {
-      // 中途失败时前面几个文件已经存到本机
-      const done = saved ? `，已下载 ${saved} / ${files.length} 个文件` : '';
-      notify(`${failText('下载', error)}${done}`, 'error');
     } finally {
       task.value = null;
+    }
+    if (failures.length) {
+      // 中途失败时前面几个文件已经存到本机
+      const done = saved ? `，已下载 ${saved} / ${count} 个文件` : '';
+      notify(`${failText('下载', failures[0])}${done}`, 'error');
+    } else {
+      notify(`已下载 ${count} 个文件`);
     }
   };
 
@@ -279,44 +298,50 @@ export const useFileTasks = (options: TaskOptions) => {
       hint: TRANSFER_HINT,
     };
     let failure: unknown = null;
+    const failures: unknown[] = [];
     try {
       await makeDirectories([...parentDirs(list.map((item) => item.path)), ...dirs]);
       for (let start = 0; start < count; start += UPLOAD_BATCH) {
         const group = list.slice(start, start + UPLOAD_BATCH);
-        await withSync(async (sync) => {
-          for (const [offset, item] of group.entries()) {
-            report({
-              name: item.path,
-              detail: detailOf(start + offset, count, `${formatSize(uploaded)} / ${formatSize(total)}`),
-            });
-            await sync.write({
-              filename: joinPath(currentPath.value, item.path),
-              file: createFileStream(item.file),
-              mtime: Math.floor(item.file.lastModified / 1000),
-            });
-            uploaded += item.file.size;
-            finished += 1;
-            report({
-              value: total ? uploaded / total : 1,
-              detail: detailOf(start + offset, count, `${formatSize(uploaded)} / ${formatSize(total)}`),
-            });
-          }
-        });
+        try {
+          await withSync(async (sync) => {
+            for (const [offset, item] of group.entries()) {
+              report({
+                name: item.path,
+                detail: detailOf(start + offset, count, `${formatSize(uploaded)} / ${formatSize(total)}`),
+              });
+              await sync.write({
+                filename: joinPath(currentPath.value, item.path),
+                file: createFileStream(item.file),
+                mtime: Math.floor(item.file.lastModified / 1000),
+              });
+              uploaded += item.file.size;
+              finished += 1;
+              report({
+                value: total ? uploaded / total : 1,
+                detail: detailOf(start + offset, count, `${formatSize(uploaded)} / ${formatSize(total)}`),
+              });
+            }
+          });
+        } catch (error) {
+          // 一批失败时会话状态未知，余下的条目在下一批重开会话后再试
+          failures.push(error);
+        }
       }
     } catch (error) {
+      // 目录建不出来时后续写入无从落点，任务到此为止
       failure = error;
-    }
-    try {
-      if (!failure) {
-        notify(`已上传 ${finished} 个文件`);
-        await reload();
-      }
     } finally {
       task.value = null;
     }
-    if (failure) {
+    const first = failure ?? failures[0];
+    // 全部成功时重读目录，有失败时已完成的部分同样要显示出来
+    if (!first || finished) await reload();
+    if (first) {
       const done = finished ? `，已完成 ${finished} / ${count} 个文件` : '';
-      notify(`${failText('上传', failure)}${done}`, 'error');
+      notify(`${failText('上传', first)}${done}`, 'error');
+    } else {
+      notify(`已上传 ${finished} 个文件`);
     }
   };
 
@@ -432,16 +457,29 @@ export const useFileTasks = (options: TaskOptions) => {
       detail: list.length > 1 ? `共 ${list.length} 项` : '',
       hint: TRANSFER_HINT,
     };
+    const failures: unknown[] = [];
     try {
       for (const [index, entry] of list.entries()) {
-        await collect(zip, entry, '', (name) => report({ name }));
+        try {
+          await collect(zip, entry, '', (name) => report({ name }));
+        } catch (error) {
+          // 一项失败不打断其余条目，原因留到任务结束后一起提示
+          failures.push(error);
+        }
         report({
           value: (index + 1) / list.length,
           detail: list.length > 1 ? `已完成 ${index + 1} / ${list.length} 项` : '',
         });
       }
-      saveAs(zip.blob(), zipName(list));
-      notify(`已打包 ${list.length} 项`);
+      // 失败的条目跳过，已经读到的内容仍然交付
+      const packed = list.length - failures.length;
+      if (packed) saveAs(zip.blob(), zipName(list));
+      if (failures.length) {
+        const done = packed ? `，已打包 ${packed} / ${list.length} 项` : '';
+        notify(`${failText('打包', failures[0])}${done}`, 'error');
+      } else {
+        notify(`已打包 ${list.length} 项`);
+      }
     } catch (error) {
       notify(`打包失败：${errorText(error)}`, 'error');
     } finally {

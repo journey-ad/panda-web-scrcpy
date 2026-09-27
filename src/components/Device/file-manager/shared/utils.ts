@@ -1,6 +1,29 @@
 /** 拼接目录与条目名 */
 export const joinPath = (dir: string, name: string) => (dir.endsWith('/') ? `${dir}${name}` : `${dir}/${name}`);
 
+/** 名称比较统一用一个实例 */
+const collator = new Intl.Collator('zh-Hans-CN', { numeric: true });
+
+const LATIN = /\p{Script=Latin}/u;
+const LETTER = /\p{L}/u;
+
+/** 字符在排序里的档位：符号 0、数字 1、拉丁字母 2、其他文字 3 */
+const rankOf = (char: string) => {
+  if (char >= '0' && char <= '9') return 1;
+  if (LATIN.test(char)) return 2;
+  return LETTER.test(char) ? 3 : 0;
+};
+
+/**
+ * 名称比较，顺序与 Windows 资源管理器一致：
+ * 符号在前，接着数字、拉丁字母，汉字等文字排在最后
+ * 首字符决定档位，同档的交给 Collator 按 locale 与数值排
+ */
+export const compareName = (a: string, b: string) => {
+  const diff = rankOf(a[0] ?? '') - rankOf(b[0] ?? '');
+  return diff || collator.compare(a, b);
+};
+
 /** 取上一级路径 */
 export const parentPath = (path: string) => {
   const index = path.lastIndexOf('/');

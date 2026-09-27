@@ -67,8 +67,24 @@ export const withSync = async <T>(
   }
 };
 
+/**
+ * 执行设备命令。优先走 shell 协议，退出码能反映命令有没有真的执行成功；
+ * 设备不支持 shell 协议时退回 none 协议，此时命令失败与成功无从区分
+ */
 export const exec = async (args: string[]) => {
   const adb = requireDevice();
+  const shell = adb.subprocess.shellProtocol;
+  if (shell?.isSupported) {
+    const { exitCode, stdout, stderr } = await runIo('interactive', () =>
+      shell.spawnWaitText(args.map(escapeArg).join(' '))
+    );
+    if (exitCode !== 0) {
+      // 设备给出的原因用于归类错误码，提示里沿用它的原文
+      const output = (stderr || stdout).trim();
+      throw new DeviceError(codeOf(new Error(output)), output || '设备未返回失败原因');
+    }
+    return stdout;
+  }
   return await runIo('interactive', () => adb.subprocess.noneProtocol!.spawnWaitText(args.map(escapeArg)));
 };
 

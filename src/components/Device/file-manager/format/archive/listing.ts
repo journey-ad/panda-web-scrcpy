@@ -4,6 +4,7 @@
  */
 
 import { decodeName, readZipEntries, type RangeReader } from '../../device/zip';
+import { compareName } from '../../shared/utils';
 
 export type ArchiveFormat = 'zip' | 'tar' | 'gzip' | 'rar' | '7z' | 'bzip2' | 'xz';
 
@@ -237,11 +238,7 @@ export const buildArchiveTree = (entries: ArchiveEntry[]): ArchiveNode[] => {
   }
 
   const byName = (a: ArchiveNode, b: ArchiveNode) =>
-    a.isDirectory === b.isDirectory
-      ? a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
-      : a.isDirectory
-        ? -1
-        : 1;
+    a.isDirectory === b.isDirectory ? compareName(a.name, b.name) : a.isDirectory ? -1 : 1;
   const sortTree = (nodes: ArchiveNode[]) => {
     nodes.sort(byName);
     for (const node of nodes) if (node.children.length) sortTree(node.children);
