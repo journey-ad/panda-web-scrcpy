@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { mdiCellphone, mdiCellphoneLink, mdiCheckCircle, mdiChevronDown, mdiClose, mdiPlus } from '@mdi/js'
+import { mdiCellphone, mdiCellphoneLink, mdiCheckCircle, mdiChevronDown, mdiClose, mdiPlus, mdiWifi } from '@mdi/js'
 
 import { ref, onMounted, shallowRef, watch, computed, onUnmounted } from 'vue';
-import client from '../Scrcpy/adb-client';
+import client, { type DeviceMeta } from '../Scrcpy/adb-client';
+import { connectWifiBridge } from '../Scrcpy/wifi-connection';
 import { AdbDaemonWebUsbDeviceObserver, AdbDaemonWebUsbDevice } from '@yume-chan/adb-daemon-webusb';
 import DeviceGuide from './DeviceGuide.vue';
+import WifiGuide from './WifiGuide.vue';
 
 const emit = defineEmits(['pair-device', 'remove-device', 'update-connection-status']);
 
 const showDevices = ref(false);
+const showWifiMenu = ref(false);
 const selected = shallowRef<AdbDaemonWebUsbDevice | undefined>(undefined);
 const usbDeviceList = shallowRef<AdbDaemonWebUsbDevice[]>([]);
 const watcher = shallowRef<AdbDaemonWebUsbDeviceObserver | null>(null);
@@ -20,9 +23,11 @@ const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('disco
 const autoReconnectAttempts = ref(0);
 const maxAutoReconnectAttempts = 3;
 const disconnectionMessage = ref('');
+const wifiUrl = ref('');
+const wifiDeviceList = shallowRef<DeviceMeta[]>([]);
 
 const deviceList = computed(() => {
-    return [...usbDeviceList.value];
+    return [...usbDeviceList.value, ...wifiDeviceList.value];
 });
 
 const deviceOptions = computed(() => {
@@ -30,6 +35,9 @@ const deviceOptions = computed(() => {
 });
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const displayName = (device: DeviceMeta | AdbDaemonWebUsbDevice) =>
+    (device as AdbDaemonWebUsbDevice).name || device.serial;
 
 /** USB/ADB 传输层疑似被占用（本页或其它客户端未释放）时可先 disconnect 再重连 */
 const isTransportOccupiedError = (e: unknown): boolean => {
@@ -141,6 +149,7 @@ const removeDevice = async (serial: string) => {
         connectionStatus.value = 'disconnected';
     }
     usbDeviceList.value = usbDeviceList.value.filter((device) => device.serial !== serial);
+    wifiDeviceList.value = wifiDeviceList.value.filter((device) => device.serial !== serial);
     emit('remove-device', serial);
     isLoading.value = false;
 };
@@ -221,6 +230,48 @@ const openMenu = () => {
     showDevices.value = true;
 };
 
+const connectWifiDevice = async () => {
+    const url = wifiUrl.value.trim();
+    if (!url) {
+        return;
+    }
+
+    errorMessage.value = '';
+    errorDetails.value = '';
+    connectionStatus.value = 'connecting';
+    isLoading.value = true;
+    emit('update-connection-status', false);
+    try {
+        const meta: DeviceMeta = {
+            serial: url,
+            connect: () => connectWifiBridge(url),
+            initialDelayedAckBytes: 0,
+        };
+        await client.connect(meta);
+        meta.name = client.deviceLabel || url;
+        if (!wifiDeviceList.value.some((device) => device.serial === url)) {
+            wifiDeviceList.value = [...wifiDeviceList.value, meta];
+        }
+        selected.value = meta as unknown as AdbDaemonWebUsbDevice;
+        connectionStatus.value = 'connected';
+        showDevices.value = false;
+        showWifiMenu.value = false;
+        emit('pair-device', meta);
+        emit('update-connection-status', true);
+        deviceInfo.value = {
+            model: meta.name || url,
+            androidVersion: 'Unknown',
+        };
+    } catch {
+        errorMessage.value = '无线调试连接失败';
+        errorDetails.value = '请确认调试地址可以访问，并确认设备已开启无线调试转发';
+        emit('update-connection-status', false);
+        connectionStatus.value = 'disconnected';
+    } finally {
+        isLoading.value = false;
+    }
+};
+
 defineExpose({ handleAddDevice, openMenu });
 </script>
 
@@ -238,7 +289,7 @@ defineExpose({ handleAddDevice, openMenu });
                 <button class="device-trigger" v-bind="props">
                     <v-icon size="16" class="trigger-icon" :icon="mdiCellphoneLink" />
                     <span class="trigger-label">
-                        {{ selected ? (selected.name || selected.serial) : '选择设备' }}
+                        {{ selected ? displayName(selected) : '选择设备' }}
                     </span>
                     <span
                         class="trigger-dot"
@@ -249,16 +300,28 @@ defineExpose({ handleAddDevice, openMenu });
             </template>
             <div class="device-dropdown">
                 <div class="dd-header">
-                    <span class="dd-title">设备</span>
+                    <span class="dd-title">{{ showWifiMenu ? '无线调试' : '设备' }}</span>
                     <div class="dd-actions">
                         <button class="dd-icon-btn" title="配对设备" @click="handleAddDevice">
                             <v-icon size="18" :icon="mdiPlus" />
                         </button>
-                        <DeviceGuide />
+                        <button
+                            class="dd-icon-btn"
+                            title="无线调试"
+                            @click="showWifiMenu = !showWifiMenu"
+                        >
+                            <v-icon
+                                size="18"
+                                :color="showWifiMenu ? 'secondary' : undefined"
+                                :icon="mdiWifi"
+                            />
+                        </button>
+                        <WifiGuide v-if="showWifiMenu" />
+                        <DeviceGuide v-else />
                     </div>
                 </div>
 
-                <div v-if="errorMessage" class="dd-section">
+                <div v-if="!showWifiMenu && errorMessage" class="dd-section">
                     <v-alert type="error" variant="tonal" density="compact" class="text-body-2">
                         <strong>{{ errorMessage }}</strong>
                         <div class="text-caption mt-1">{{ errorDetails }}</div>
@@ -268,13 +331,13 @@ defineExpose({ handleAddDevice, openMenu });
                     </v-alert>
                 </div>
 
-                <div v-if="disconnectionMessage" class="dd-section">
+                <div v-if="!showWifiMenu && disconnectionMessage" class="dd-section">
                     <v-alert type="warning" variant="tonal" density="compact" class="text-body-2">
                         {{ disconnectionMessage }}
                     </v-alert>
                 </div>
 
-                <div v-if="!deviceList.length" class="dd-section dd-empty">
+                <div v-if="!showWifiMenu && !deviceList.length" class="dd-section dd-empty">
                     <p class="text-body-2 text-medium-emphasis mb-3">暂无已配对设备</p>
                     <v-btn variant="outlined" size="small" block @click="handleAddDevice">
                         <v-icon start size="16" :icon="mdiCellphoneLink" />
@@ -282,7 +345,7 @@ defineExpose({ handleAddDevice, openMenu });
                     </v-btn>
                 </div>
 
-                <div v-else class="dd-list">
+                <div v-else-if="!showWifiMenu" class="dd-list">
                     <div
                         v-for="device in deviceOptions"
                         :key="device.serial"
@@ -293,7 +356,7 @@ defineExpose({ handleAddDevice, openMenu });
                             <v-icon size="20" color="secondary" :icon="mdiCellphone" />
                         </div>
                         <div class="dd-item-info">
-                            <span class="dd-item-name">{{ device.name || device.serial }}</span>
+                            <span class="dd-item-name">{{ displayName(device) }}</span>
                             <span class="dd-item-serial">{{ device.serial }}</span>
                         </div>
                         <v-icon
@@ -310,6 +373,24 @@ defineExpose({ handleAddDevice, openMenu });
                             <v-icon size="16" :icon="mdiClose" />
                         </button>
                     </div>
+                </div>
+
+                <div v-if="showWifiMenu" class="dd-section dd-wifi">
+                    <input
+                        v-model="wifiUrl"
+                        class="dd-input"
+                        placeholder="调试地址，如 ws://127.0.0.1:5556"
+                        @keyup.enter="connectWifiDevice"
+                    />
+                    <button
+                        class="dd-wifi-btn"
+                        :disabled="!wifiUrl.trim() || isLoading"
+                        @click="connectWifiDevice"
+                    >
+                        <v-icon size="16" :icon="mdiWifi" />
+                        通过无线调试连接
+                    </button>
+                    <p class="dd-hint">需要先在设备上启用无线调试，并开启转发服务</p>
                 </div>
 
                 <div class="dd-footer">
@@ -438,6 +519,59 @@ defineExpose({ handleAddDevice, openMenu });
 
 .dd-list {
     padding: 0 6px 4px;
+}
+
+.dd-wifi {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dd-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    font-size: 13px;
+    color: rgba(24, 24, 27, 0.85);
+    outline: none;
+}
+
+.dd-input:focus {
+    border-color: var(--border-hover);
+}
+
+.dd-wifi-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(24, 24, 27, 0.7);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.dd-wifi-btn:hover:not(:disabled) {
+    background: rgba(24, 24, 27, 0.03);
+    border-color: var(--border-hover);
+}
+
+.dd-wifi-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dd-hint {
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(24, 24, 27, 0.45);
 }
 
 .dd-item {
